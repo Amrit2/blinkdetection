@@ -1,21 +1,30 @@
 #define CPU_HZ 48000000
 #define TIMER_PRESCALER_DIV 1024
-int writeIndex = 2;
+#define arrayLength 4
+
+//#define LED_PIN 13 ------DELETE-----
+
+int writeIndex = 0;
 int readIndex = 0;
-int data[6]; // 2 sync + 4 data + 1 checksum
+int data[arrayLength]; // 2 sync + 4 data + 1 checksum
 int sync = 170;
 
 void startTimer(int frequencyHz);
 void setTimerFrequency(int frequencyHz);
 void TC3_Handler();
+bool newData = false;
+//bool isLEDOn = false;
 
 void setup() {
+
+  //pinMode(LED_PIN, OUTPUT); ------DELETE-----
+  
   Serial.begin(38400);
   
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  startTimer(1);
+  startTimer(10);
   
   pinMode(A2, OUTPUT);
   pinMode(A3, OUTPUT);
@@ -25,35 +34,46 @@ void setup() {
 }
 
 void loop() {
-   data[0] = 170;
-   data[1] = 170; 
+  // data[0] = 170;
+  // data[1] = 170; 
+  // data[2] = 4;
+   //data[7] = getChecksum(data);
 
-   //data[6] = getChecksum(data);
- 
-   if (readIndex <= writeIndex){
-    while (readIndex <= writeIndex){
-      Serial.print("Current index: " + readIndex);   // change to Serial.write()
-      Serial.println(data[readIndex]);
-      readIndex++;
+  if (newData){
+    if (readIndex <= writeIndex){
+      while (readIndex <= writeIndex-1){
+        Serial.print("Current index: ");   // change to Serial.write()
+        Serial.print(readIndex);
+        Serial.print(" = ");
+        Serial.println(data[readIndex]);
+        readIndex++;
     }  
    }
    else if (readIndex >= writeIndex){
-    while (readIndex <= sizeof(data)){
-      Serial.print("Current index: " + readIndex);   
+    while (readIndex <= arrayLength-1){
+      Serial.print("Current index: ");   // change to Serial.write()
+     Serial.print(readIndex);
+             Serial.print(" = ");
+
       Serial.println(data[readIndex]);
       readIndex++;
     }  
     readIndex = 0;
-    while (readIndex <= writeIndex){
-      Serial.print("Current index: " + readIndex);   
+    while (readIndex <= writeIndex-1){
+      Serial.print("Current index: ");   // change to Serial.write()
+     Serial.print(readIndex);   
+             Serial.print(" = ");
+
       Serial.println(data[readIndex]);
       readIndex++;
     }
    }
+   newData = false;
+  }
+  
 }
 
 void startTimer(int frequencyHz) {
-
    
    REG_GCLK_CLKCTRL = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC2_TC3) ;
    while ( GCLK->STATUS.bit.SYNCBUSY == 1 ); // wait for sync
@@ -116,11 +136,11 @@ void TC3_Handler() {
    //digitalWrite(A2, LOW);
     digitalWrite(A3, LOW);
    //digitalWrite(A4, LOW);
-    analogReadResolution(12);
+    analogReadResolution(12); //SHIFT TO SETUP
 
-    if ( writeIndex+4  >= sizeof(data))
+    if ( writeIndex  >= arrayLength)
     { 
-      writeIndex = 2;
+      writeIndex = 0;
     //flag
     }
     
@@ -129,6 +149,7 @@ void TC3_Handler() {
     
     data[writeIndex] = analogRead(A3); //Reads the analog value on pin A3 
     writeIndex++;
+    
 
    //data[writeIndex] = analogRead(A4); //Reads the analog value on pin A4
    //writeIndex++;
@@ -137,22 +158,28 @@ void TC3_Handler() {
    //writeIndex++;
 
    //digitalWrite(A2, HIGH);
-   digitalWrite(A3, HIGH);
+  // digitalWrite(A3, HIGH);
    //digitalWrite(A4, HIGH);
+  newData = true;
+  
+  //digitalWrite(LED_PIN, isLEDOn);  ------DELETE-----
+  //isLEDOn = !isLEDOn;
+   
   }
 }
 
-uint16_t getChecksum( uint12_t *data, int count )
- 2 {
- 3    uint16_t sum1 = 0;
- 4    uint16_t sum2 = 0;
- 5    int index;
- 6 
- 7    for( index = 0; index < count; ++index )
- 8    {
- 9       sum1 = (sum1 + data[index]) % 4095; //2^12 = 4096
-10       sum2 = (sum2 + sum1) % 4095;
-11    }
-12 
-13    return (sum2 << 12) | sum1;
-14 }
+//uint16_t getChecksum( uint12_t *data, int count )
+  //{
+  //   uint16_t sum1 = 0;
+  //   uint16_t sum2 = 0;
+   //  int index;
+ 
+   //  for( index = 0; index < count; ++index )
+    // {
+    //    sum1 = (sum1 + data[index]) % 4095; //2^12 = 4096 - CHANGE TO 16
+ //     sum2 = (sum2 + sum1) % 4095;
+ //  }
+
+ //  return (sum2 << 12) | sum1;
+ //}
+
