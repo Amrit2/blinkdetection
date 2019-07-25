@@ -2,7 +2,6 @@
 #define TIMER_PRESCALER_DIV 1024
 #define arrayLength 4
 
-//#define LED_PIN 13 ------DELETE-----
 
 int writeIndex = 0;
 int readIndex = 0;
@@ -13,11 +12,9 @@ void startTimer(int frequencyHz);
 void setTimerFrequency(int frequencyHz);
 void TC3_Handler();
 bool newData = false;
-//bool isLEDOn = false;
 
 void setup() {
 
-  //pinMode(LED_PIN, OUTPUT); ------DELETE-----
   
   Serial.begin(38400);
   
@@ -34,10 +31,10 @@ void setup() {
 }
 
 void loop() {
-  // data[0] = 170;
-  // data[1] = 170; 
-  // data[2] = 4;
-   //data[7] = getChecksum(data);
+  data[0] = 170;
+  data[1] = 170; 
+  data[2] = 4;
+  data[7] = getChecksum(data);
 
   if (newData){
     if (readIndex <= writeIndex){
@@ -128,7 +125,9 @@ void TC3_Handler() {
   
   TcCount16* TC = (TcCount16*) TC3;
   // If this interrupt is due to the compare register matching the timer count
-  // we toggle the LED.
+  // we sample the data
+  
+  
   if (TC->INTFLAG.bit.MC0 == 1) {
     TC->INTFLAG.bit.MC0 = 1;
     
@@ -144,42 +143,35 @@ void TC3_Handler() {
     //flag
     }
     
-   //data[writeIndex] = analogRead(A2); //Reads the analog value on pin A2 
-   //writeIndex++; 
+   data[writeIndex] = analogRead(A2); //Reads the analog value on pin A2 
+    writeIndex++; 
     
     data[writeIndex] = analogRead(A3); //Reads the analog value on pin A3 
     writeIndex++;
     
 
-   //data[writeIndex] = analogRead(A4); //Reads the analog value on pin A4
-   //writeIndex++;
+   data[writeIndex] = analogRead(A4); //Reads the analog value on pin A4
+   writeIndex++;
 
-   //data[writeIndex] = analogRead(A5); //Reads the analog value on pin A5 
-   //writeIndex++;
+   data[writeIndex] = analogRead(A5); //Reads the analog value on pin A5 
+   writeIndex++;
 
-   //digitalWrite(A2, HIGH);
-  // digitalWrite(A3, HIGH);
-   //digitalWrite(A4, HIGH);
   newData = true;
-  
-  //digitalWrite(LED_PIN, isLEDOn);  ------DELETE-----
-  //isLEDOn = !isLEDOn;
    
   }
 }
 
-//uint16_t getChecksum( uint12_t *data, int count )
-  //{
-  //   uint16_t sum1 = 0;
-  //   uint16_t sum2 = 0;
-   //  int index;
+uint16_t getChecksum( uint12_t *data, int count )
+{
+   uint16_t sum1 = 0;
+   uint16_t sum2 = 0;
+   int index;
  
-   //  for( index = 0; index < count; ++index )
-    // {
-    //    sum1 = (sum1 + data[index]) % 4095; //2^12 = 4096 - CHANGE TO 16
- //     sum2 = (sum2 + sum1) % 4095;
- //  }
+   for( index = 0; index < count; ++index )
+   {
+     sum1 = (sum1 + data[index]) % 4095; //2^12 = 4096 - CHANGE TO 16
+     sum2 = (sum2 + sum1) % 4095;
+   }
 
- //  return (sum2 << 12) | sum1;
- //}
-
+   return (sum2 << 12) | sum1;
+ }
