@@ -1,12 +1,14 @@
 #define CPU_HZ 48000000
 #define TIMER_PRESCALER_DIV 1024
-#define arrayLength 4
-
+#define arrayLength 6 // 2 sync + 1 length + 2 data + 1 checksum
+#define syncByte 170
+#define dataLength 2
+#define channel1 A2
+#define channel2 A3
 
 int writeIndex = 0;
 int readIndex = 0;
-int data[arrayLength]; // 2 sync + 4 data + 1 checksum
-int sync = 170;
+int payLoad[arrayLength]; 
 
 void startTimer(int frequencyHz);
 void setTimerFrequency(int frequencyHz);
@@ -14,8 +16,6 @@ void TC3_Handler();
 bool newData = false;
 
 void setup() {
-
-  
   Serial.begin(38400);
   
   while (!Serial) {
@@ -23,18 +23,15 @@ void setup() {
   }
   startTimer(10);
   
-  pinMode(A2, OUTPUT);
-  pinMode(A3, OUTPUT);
-  pinMode(A4, OUTPUT);
-  
+  pinMode(channel1, OUTPUT);
+  pinMode(channel2, OUTPUT);
   
 }
 
 void loop() {
-  data[0] = 170;
-  data[1] = 170; 
-  data[2] = 4;
-  data[7] = getChecksum(data);
+  payLoad[0] = syncByte;
+  payLoad[1] = syncByte; 
+  payLoad[2] = dataLength;
 
   if (newData){
     if (readIndex <= writeIndex){
@@ -42,7 +39,7 @@ void loop() {
         Serial.print("Current index: ");   // change to Serial.write()
         Serial.print(readIndex);
         Serial.print(" = ");
-        Serial.println(data[readIndex]);
+        Serial.println(payLoad[readIndex]);
         readIndex++;
     }  
    }
@@ -52,7 +49,7 @@ void loop() {
      Serial.print(readIndex);
              Serial.print(" = ");
 
-      Serial.println(data[readIndex]);
+      Serial.println(payLoad[readIndex]);
       readIndex++;
     }  
     readIndex = 0;
@@ -61,7 +58,7 @@ void loop() {
      Serial.print(readIndex);   
              Serial.print(" = ");
 
-      Serial.println(data[readIndex]);
+      Serial.println(payLoad[readIndex]);
       readIndex++;
     }
    }
@@ -130,11 +127,10 @@ void TC3_Handler() {
   
   if (TC->INTFLAG.bit.MC0 == 1) {
     TC->INTFLAG.bit.MC0 = 1;
-    
    
-   //digitalWrite(A2, LOW);
-    digitalWrite(A3, LOW);
-   //digitalWrite(A4, LOW);
+   digitalWrite(channel1, LOW);
+   digitalWrite(channel2, LOW);
+   
     analogReadResolution(12); //SHIFT TO SETUP
 
     if ( writeIndex  >= arrayLength)
@@ -143,35 +139,25 @@ void TC3_Handler() {
     //flag
     }
     
-   data[writeIndex] = analogRead(A2); //Reads the analog value on pin A2 
+   payLoad[writeIndex] = analogRead(channel1); //Reads the analog value on pin A2 
     writeIndex++; 
     
-    data[writeIndex] = analogRead(A3); //Reads the analog value on pin A3 
+   payLoad[writeIndex] = analogRead(channel2); //Reads the analog value on pin A3 
     writeIndex++;
-    
-
-   data[writeIndex] = analogRead(A4); //Reads the analog value on pin A4
-   writeIndex++;
-
-   data[writeIndex] = analogRead(A5); //Reads the analog value on pin A5 
-   writeIndex++;
 
   newData = true;
    
   }
-}
-
-uint16_t getChecksum( uint12_t *data, int count )
-{
-   uint16_t sum1 = 0;
-   uint16_t sum2 = 0;
-   int index;
+  uint16_t sum1 = 0;
+  uint16_t sum2 = 0;
+  int index;
  
-   for( index = 0; index < count; ++index )
-   {
-     sum1 = (sum1 + data[index]) % 4095; //2^12 = 4096 - CHANGE TO 16
-     sum2 = (sum2 + sum1) % 4095;
-   }
+  for( index = 3; index < 5; ++index )
+  {
+   sum1 = (sum1 + payLoad[index]) % 65536; //CHANGE TO 16: why??????
+   sum2 = (sum2 + sum1) % 65536;
+  }
 
-   return (sum2 << 12) | sum1;
- }
+  payLoad[5] = (sum2 << 16) | sum1;
+  
+}
