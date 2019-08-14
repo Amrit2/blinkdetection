@@ -135,7 +135,7 @@ void TC3_Handler() {
 
     if ( writeIndex  >= arrayLength)
     { 
-      writeIndex = 0;
+      writeIndex = 3;
     //flag
     }
     
