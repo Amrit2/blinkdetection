@@ -1,12 +1,13 @@
 #define CPU_HZ 48000000
 #define TIMER_PRESCALER_DIV 1024
-#define arrayLength 6 // 2 sync + 1 length + 2 data + 1 checksum
+#define arrayLength 6 // 2 sync + 1 length + 3 data + 1 checksum
 #define syncByte 170
-#define dataLength 2
-#define channel1 A2
-#define channel2 A3
+#define dataLength 3
+#define channel1 A1
+#define channel2 A2
+#define channel3 A3
 
-int writeIndex = 0;
+int writeIndex = 3;
 int readIndex = 0;
 int payLoad[arrayLength]; 
 
@@ -25,6 +26,7 @@ void setup() {
   
   pinMode(channel1, OUTPUT);
   pinMode(channel2, OUTPUT);
+  pinMode(channel3, OUTPUT);
   
 }
 
@@ -34,37 +36,15 @@ void loop() {
   payLoad[2] = dataLength;
 
   if (newData){
-    if (readIndex <= writeIndex){
-      while (readIndex <= writeIndex-1){
-        Serial.print("Current index: ");   // change to Serial.write()
-        Serial.print(readIndex);
-        Serial.print(" = ");
-        Serial.println(payLoad[readIndex]);
-        readIndex++;
-    }  
-   }
-   else if (readIndex >= writeIndex){
-    while (readIndex <= arrayLength-1){
+    while (readIndex <= arrayLength){
       Serial.print("Current index: ");   // change to Serial.write()
-     Serial.print(readIndex);
-             Serial.print(" = ");
-
-      Serial.println(payLoad[readIndex]);
-      readIndex++;
-    }  
-    readIndex = 0;
-    while (readIndex <= writeIndex-1){
-      Serial.print("Current index: ");   // change to Serial.write()
-     Serial.print(readIndex);   
-             Serial.print(" = ");
-
+      Serial.print(readIndex);
+      Serial.print(" = ");
       Serial.println(payLoad[readIndex]);
       readIndex++;
     }
-   }
-   newData = false;
+    readIndex = 0;
   }
-  
 }
 
 void startTimer(int frequencyHz) {
@@ -119,45 +99,45 @@ void setTimerFrequency (int frequencyHz)
 }
 
 void TC3_Handler() {
+    TcCount16* TC = (TcCount16*) TC3;
+      // If this interrupt is due to the compare register matching the timer count
+      // we sample the data
   
-  TcCount16* TC = (TcCount16*) TC3;
-  // If this interrupt is due to the compare register matching the timer count
-  // we sample the data
   
-  
-  if (TC->INTFLAG.bit.MC0 == 1) {
-    TC->INTFLAG.bit.MC0 = 1;
+    if (TC->INTFLAG.bit.MC0 == 1) {
+      TC->INTFLAG.bit.MC0 = 1;
    
-   digitalWrite(channel1, LOW);
-   digitalWrite(channel2, LOW);
+      digitalWrite(channel1, LOW);
+      digitalWrite(channel2, LOW);
+      digitalWrite(channel3, LOW);
    
-    analogReadResolution(12); //SHIFT TO SETUP
+      analogReadResolution(12); //SHIFT TO SETUP
 
-    if ( writeIndex  >= arrayLength)
-    { 
-      writeIndex = 3;
-    //flag
+      if (writeIndex >= arrayLength)
+      { 
+        writeIndex = 3;
+      }
+    
+      payLoad[writeIndex] = analogRead(channel1); //Reads the analog value on pin A2 
+      writeIndex++; 
+    
+      payLoad[writeIndex] = analogRead(channel2); //Reads the analog value on pin A3 
+      writeIndex++;
+
+      payLoad[writeIndex] = analogRead(channel3); //Reads the analog value on pin A3 
+      writeIndex++;
+      newData = true;
     }
-    
-   payLoad[writeIndex] = analogRead(channel1); //Reads the analog value on pin A2 
-    writeIndex++; 
-    
-   payLoad[writeIndex] = analogRead(channel2); //Reads the analog value on pin A3 
-    writeIndex++;
-
-  newData = true;
-   
-  }
-  uint16_t sum1 = 0;
-  uint16_t sum2 = 0;
-  int index;
+    uint16_t sum1 = 0;
+    uint16_t sum2 = 0;
+    int index;
  
-  for( index = 3; index < 5; ++index )
-  {
-   sum1 = (sum1 + payLoad[index]) % 65536; //CHANGE TO 16: why??????
-   sum2 = (sum2 + sum1) % 65536;
-  }
+    for( index = 3; index < 6; ++index )
+    {
+      sum1 = (sum1 + payLoad[index]) % 65536; //CHANGE TO 16: why??????
+      sum2 = (sum2 + sum1) % 65536;
+    }
 
-  payLoad[5] = (sum2 << 16) | sum1;
-  
+    payLoad[writeIndex] = (sum2 << 16) | sum1;
+
 }
