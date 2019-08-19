@@ -24,7 +24,7 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  startTimer(10);
+  startTimer(1);
   
   pinMode(channel1, OUTPUT);
   pinMode(channel2, OUTPUT);
@@ -38,10 +38,6 @@ void loop() {
   payLoad[2] = dataLength;
 
   if (newData){
-    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(100);                       // wait for a second
-    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-    delay(100);
     while (readIndex <= arrayLength){
       Serial.print("Current index: ");   // change to Serial.write()
       Serial.print(readIndex);
