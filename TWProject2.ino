@@ -8,7 +8,7 @@
 #define channel3 A3
 
 int writeIndex = 3;
-int readIndex = 0;
+int readIndex = 3;
 int payLoad[arrayLength]; 
 
 void startTimer(int frequencyHz);
@@ -17,14 +17,14 @@ void TC3_Handler();
 bool newData = false;
 
 void setup() {
-  Serial.begin(38400);
+  Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT); //pin 13
   digitalWrite(LED_BUILTIN, HIGH); 
   
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  startTimer(1);
+  startTimer(512);
   
   pinMode(channel1, OUTPUT);
   pinMode(channel2, OUTPUT);
@@ -38,15 +38,21 @@ void loop() {
   payLoad[2] = dataLength;
 
   if (newData){
-    while (readIndex <= arrayLength){
-      Serial.print("Current index: ");   // change to Serial.write()
-      Serial.print(readIndex);
-      Serial.print(" = ");
-      Serial.println(payLoad[readIndex]);
-      readIndex++;
-    }
-    readIndex = 0;
+    //while (readIndex <= 5){
+      //Serial.print("Current index: ");   // change to Serial.write()
+      //Serial.print(readIndex);
+      //Serial.print(" = ");
+      Serial.print(payLoad[3]);
+      Serial.print(" ");
+      Serial.print(payLoad[4]);
+      Serial.print(" ");
+      Serial.print(payLoad[5]);
+   // }
+    newData = false;
+    Serial.print("\r\n");
+    readIndex = 3;
   }
+  
 }
 
 void startTimer(int frequencyHz) {
