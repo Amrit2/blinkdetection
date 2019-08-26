@@ -38,19 +38,15 @@ void loop() {
   payLoad[2] = dataLength;
 
   if (newData){
-    //while (readIndex <= 5){
-      //Serial.print("Current index: ");   // change to Serial.write()
-      //Serial.print(readIndex);
-      //Serial.print(" = ");
-      Serial.print(payLoad[3]);
-      Serial.print(" ");
-      Serial.print(payLoad[4]);
-      Serial.print(" ");
-      Serial.print(payLoad[5]);
-   // }
+      Serial.write(payLoad[0]);
+      Serial.write(payLoad[1]);
+      Serial.write(payLoad[2]);
+      Serial.write(payLoad[3]);
+      Serial.write(payLoad[4]);
+      Serial.write(payLoad[5]);
+      Serial.write(payLoad[6]);
+   
     newData = false;
-    Serial.print("\r\n");
-    readIndex = 3;
   }
   
 }
@@ -136,6 +132,7 @@ void TC3_Handler() {
       writeIndex++;
       newData = true;
     }
+    
     uint16_t sum1 = 0;
     uint16_t sum2 = 0;
     int index;
