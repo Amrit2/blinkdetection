@@ -9,7 +9,7 @@
 
 int writeIndex = 3;
 int readIndex = 3;
-int payLoad[arrayLength]; 
+uint16_t payLoad[arrayLength]; 
 
 void startTimer(int frequencyHz);
 void setTimerFrequency(int frequencyHz);
@@ -37,14 +37,10 @@ void loop() {
   payLoad[1] = syncByte; 
   payLoad[2] = dataLength;
 
+  byte *b = (byte *)payLoad;
+
   if (newData){
-      Serial.write(payLoad[0]);
-      Serial.write(payLoad[1]);
-      Serial.write(payLoad[2]);
-      Serial.write(payLoad[3]);
-      Serial.write(payLoad[4]);
-      Serial.write(payLoad[5]);
-      Serial.write(payLoad[6]);
+    Serial.write(b, 14);
    
     newData = false;
   }
