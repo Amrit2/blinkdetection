@@ -3,9 +3,9 @@
 #define arrayLength 6 // 2 sync + 1 length + 3 data + 1 checksum
 #define syncByte 170
 #define dataLength 3
-#define channel1 A1
-#define channel2 A2
-#define channel3 A3
+#define channel1 A3 //ref
+#define channel2 A4
+#define channel3 A5
 
 int writeIndex = 3;
 int readIndex = 3;
@@ -49,8 +49,8 @@ void loop() {
 
 void startTimer(int frequencyHz) {
    
-   REG_GCLK_CLKCTRL = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC2_TC3) ;
-   while ( GCLK->STATUS.bit.SYNCBUSY == 1 ); // wait for sync
+   REG_GCLK_CLKCTRL = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC2_TC3) ; //CLKEN - used to enable/disable generic clock, GCLK0 - generator 0, CLKCTRL_ID - selected clock which is TCC2_TC3 
+   while ( GCLK->STATUS.bit.SYNCBUSY == 1 ); // wait while synchronization of registers between clock domains is started
 
    TcCount16* TC = (TcCount16*) TC3;
 
@@ -83,7 +83,7 @@ void startTimer(int frequencyHz) {
 
 void setTimerFrequency (int frequencyHz) 
 {
-  int compareValue = (CPU_HZ / (TIMER_PRESCALER_DIV * frequencyHz)) - 1;  // = 89.____ setting the compare value = should be 2ms?
+  int compareValue = (CPU_HZ / (TIMER_PRESCALER_DIV * frequencyHz)) - 1;  
   TcCount16* TC = (TcCount16*) TC3;
   // Make sure the count is in a proportional position to where it was
   // to prevent any jitter or disconnect when changing the compare value.
